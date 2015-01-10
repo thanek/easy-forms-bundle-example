@@ -18,10 +18,10 @@ use AppBundle\Configuration\Form;
  * @Form("new_form",method="createCreateForm",starter="newAction",acceptor="createAction",rejector="onFormFailed")
  * @Form("edit_form",method="createEditForm",starter="editAction",acceptor="updateAction",rejector="onFormFailed")
  * @Form("delete_form",method="createDeleteForm",starter="editAction",acceptor="deleteAction")
+ * @Form("delete_form",method="createDeleteForm",starter="showAction")
  */
 class PostController extends Controller
 {
-
     /**
      * @Route("/", name="post")
      * @Method("GET")
@@ -48,11 +48,8 @@ class PostController extends Controller
      */
     public function showAction(Post $entity)
     {
-        $deleteForm = $this->createDeleteForm($entity);
-
         return [
             'entity' => $entity,
-            'delete_form' => $deleteForm->createView(),
         ];
     }
 
@@ -83,18 +80,11 @@ class PostController extends Controller
         $em->persist($entity);
         $em->flush();
 
-        $this->getSession()->getFlashBag()->add('notice', 'Post '.$entity->getTitle().' added successfully!');
+        $this->addFlashMessage('notice', 'Post ' . $entity->getTitle() . ' added successfully!');
 
         return $this->redirect($this->generateUrl('post_show', ['id' => $entity->getId()]));
     }
 
-    /**
-     * @param Post $entity
-     */
-    public function onFormFailed(Post $entity)
-    {
-        $this->getSession()->getFlashBag()->add('error', 'Form submission failed for ' . $entity->getTitle() . '!');
-    }
 
     /**
      * @param Post $entity The entity
@@ -129,22 +119,6 @@ class PostController extends Controller
     }
 
     /**
-     * @param Post $entity The entity
-     *
-     * @return FormInterface The form
-     */
-    public function createEditForm(Post $entity)
-    {
-        $form = $this->createForm(new PostType(), $entity, [
-            'action' => $this->generateUrl('post_update', ['id' => $entity->getId()]),
-            'method' => 'PUT',
-        ]);
-        $form->add('submit', 'submit', ['label' => 'Update']);
-
-        return $form;
-    }
-
-    /**
      * @Route("/{id}", name="post_update")
      * @Method("PUT")
      * @Template("AppBundle:Post:edit.html.twig")
@@ -159,9 +133,25 @@ class PostController extends Controller
         $em->persist($entity);
         $em->flush();
 
-        $this->getSession()->getFlashBag()->add('notice', 'Post '.$entity->getTitle().' updated successfully!');
+        $this->addFlashMessage('notice', 'Post ' . $entity->getTitle() . ' updated successfully!');
 
         return $this->redirect($this->generateUrl('post_edit', ['id' => $entity->getId()]));
+    }
+
+    /**
+     * @param Post $entity The entity
+     *
+     * @return FormInterface The form
+     */
+    public function createEditForm(Post $entity)
+    {
+        $form = $this->createForm(new PostType(), $entity, [
+            'action' => $this->generateUrl('post_update', ['id' => $entity->getId()]),
+            'method' => 'PUT',
+        ]);
+        $form->add('submit', 'submit', ['label' => 'Update']);
+
+        return $form;
     }
 
     /**
@@ -179,7 +169,7 @@ class PostController extends Controller
         $em->remove($entity);
         $em->flush();
 
-        $this->getSession()->getFlashBag()->add('notice', 'Udało się usunąć!');
+        $this->addFlashMessage('notice', 'Post deleted successfully!');
 
         return $this->redirect($this->generateUrl('post'));
     }
@@ -199,12 +189,27 @@ class PostController extends Controller
     }
 
     /**
+     * @param Post $entity
+     */
+    public function onFormFailed(Post $entity)
+    {
+        $this->addFlashMessage('error', 'Form submission failed for ' . $entity->getTitle() . '!');
+    }
+
+    /**
+     * @param string $type
+     * @param string $message
+     */
+    protected function addFlashMessage($type, $message)
+    {
+        $this->getSession()->getFlashBag()->add($type, $message);
+    }
+
+    /**
      * @return Session
      */
     protected function getSession()
     {
-        /** @var $session Session */
-        $session = $this->get('session');
-        return $session;
+        return $this->get('session');
     }
 }
