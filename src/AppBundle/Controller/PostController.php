@@ -86,9 +86,9 @@ class PostController extends Controller
         $em->persist($entity);
         $em->flush();
 
-        $this->getSession()->getFlashBag()->add('notice', 'Udało się dodać!');
+        $this->getSession()->getFlashBag()->add('notice', 'Post '.$entity->getTitle().' added successfully!');
 
-        return $this->redirect($this->generateUrl('post_show', array('id' => $entity->getId())));
+        return $this->redirect($this->generateUrl('post_show', ['id' => $entity->getId()]));
     }
 
     /**
@@ -108,11 +108,11 @@ class PostController extends Controller
      */
     public function createCreateForm(Post $entity)
     {
-        $form = $this->createForm(new PostType(), $entity, array(
+        $form = $this->createForm(new PostType(), $entity, [
             'action' => $this->generateUrl('post_create'),
             'method' => 'POST',
-        ));
-        $form->add('submit', 'submit', array('label' => 'Create'));
+        ]);
+        $form->add('submit', 'submit', ['label' => 'Create']);
 
         return $form;
     }
@@ -145,11 +145,11 @@ class PostController extends Controller
      */
     public function createEditForm(Post $entity)
     {
-        $form = $this->createForm(new PostType(), $entity, array(
-            'action' => $this->generateUrl('post_update', array('id' => $entity->getId())),
+        $form = $this->createForm(new PostType(), $entity, [
+            'action' => $this->generateUrl('post_update', ['id' => $entity->getId()]),
             'method' => 'PUT',
-        ));
-        $form->add('submit', 'submit', array('label' => 'Update'));
+        ]);
+        $form->add('submit', 'submit', ['label' => 'Update']);
 
         return $form;
     }
@@ -198,9 +198,9 @@ class PostController extends Controller
     public function createDeleteForm(Post $entity)
     {
         return $this->createFormBuilder()
-            ->setAction($this->generateUrl('post_delete', array('id' => $entity->getId())))
+            ->setAction($this->generateUrl('post_delete', ['id' => $entity->getId()]))
             ->setMethod('DELETE')
-            ->add('submit', 'submit', array('label' => 'Delete'))
+            ->add('submit', 'submit', ['label' => 'Delete'])
             ->getForm();
     }
 
