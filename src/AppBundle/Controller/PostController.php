@@ -8,7 +8,6 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Form\FormInterface;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Session\Session;
 use AppBundle\Configuration\Form;
@@ -17,7 +16,7 @@ use AppBundle\Configuration\Form;
  * @Route("/post")
  * @Form("new_form",method="createCreateForm",starter="newAction",acceptor="createAction",rejector="onFormFailed")
  * @Form("edit_form",method="createEditForm",starter="editAction",acceptor="updateAction",rejector="onFormFailed")
- * @Form("delete_form",method="createDeleteForm",starter="editAction",acceptor="deleteAction",rejector="onFormFailed")
+ * @Form("delete_form",method="createDeleteForm",starter="editAction",acceptor="deleteAction")
  */
 class PostController extends Controller
 {
@@ -72,7 +71,6 @@ class PostController extends Controller
         $entity = new Post();
         return [
             'entity' => $entity,
-            'knuf' => 'inNew',
         ];
     }
 
