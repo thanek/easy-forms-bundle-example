@@ -11,4 +11,4 @@ The FormListener will handle the flow, it will create the form and inject it int
 
 You can also use the `rejector` property of `@Form` annotation to point a method which will be executed when form submission fails.
 
-See [`PostController`](symfony-form-listener/src/AppBundle/Controller/PostController.php) class for example how to use the `@Form` annotation.
+See [`PostController`](src/AppBundle/Controller/PostController.php) class for example how to use the `@Form` annotation.
