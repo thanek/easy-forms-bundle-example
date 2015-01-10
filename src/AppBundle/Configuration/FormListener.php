@@ -1,11 +1,11 @@
 <?php
 namespace AppBundle\Configuration;
 
-use AppBundle\Controller\PostController;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\Util\ClassUtils;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DependencyInjection\ContainerAwareHttpKernel;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -16,8 +16,6 @@ class FormListener
 {
     /** @var ContainerInterface */
     private $container;
-    /** @var Reader */
-    private $annotationReader;
 
     /** @var array */
     private $templateParameters;
@@ -27,8 +25,8 @@ class FormListener
     private $controller;
     /** @var Form */
     private $currentFormAnnotation;
-
-    private $tree = array();
+    /** @var array */
+    private $tree = [];
 
     /**
      * @param ContainerInterface $container
@@ -36,7 +34,6 @@ class FormListener
     function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->annotationReader = $this->container->get('annotation_reader');
     }
 
     /**
@@ -51,19 +48,7 @@ class FormListener
         $className = ClassUtils::getClass($controllerInstance);
 
         $formAnnotations = $this->getFormAnnotations($className);
-        foreach ($formAnnotations as $formAnnotation) {
-            if ($method != $formAnnotation->getStarter()
-                && $method != $formAnnotation->getAcceptor()
-            ) {
-                continue;
-            }
-
-            $starter = $formAnnotation->getStarter();
-            if (empty($this->tree[$className . '::' . $starter])) {
-                $this->tree[$className . '::' . $starter] = array();
-            }
-            $this->tree[$className . '::' . $starter][] = $formAnnotation;
-        }
+        $this->buildFormsTree($formAnnotations, $method, $className);
 
         $this->controller = $controllerInstance;
 
@@ -72,11 +57,8 @@ class FormListener
 
             if ($method == $formAnnotation->getAcceptor()) {
                 $this->currentFormAnnotation = $formAnnotation;
-                $request->attributes->set('_controller', $className . '::' . $formAnnotation->getStarter());
-
-                /** @var ContainerAwareHttpKernel $kernel */
-                $kernel = $event->getKernel();
-                $response = $kernel->handle($request, HttpKernelInterface::SUB_REQUEST);
+                $starterActionName = $className . '::' . $formAnnotation->getStarter();
+                $response = $this->executeStarter($event, $request, $starterActionName);
                 if ($response->getStatusCode() == '200') {
                     $templateParams = $this->templateParameters;
 
@@ -104,6 +86,66 @@ class FormListener
     }
 
     /**
+     * @param $className
+     *
+     * @return Form[]
+     */
+    protected function getFormAnnotations($className)
+    {
+        /** @var Reader */
+        $annotationReader = $this->container->get('annotation_reader');
+        $reflectionClass = new \ReflectionClass($className);
+        $allAnnotations = $annotationReader->getClassAnnotations($reflectionClass);
+        $formAnnotations = array_filter($allAnnotations, function ($annotation) {
+            return $annotation instanceof Form;
+        });
+        return $formAnnotations;
+    }
+
+    /**
+     * @param $formAnnotations
+     * @param $method
+     * @param $className
+     * @return mixed
+     */
+    protected function buildFormsTree($formAnnotations, $method, $className)
+    {
+        foreach ($formAnnotations as $formAnnotation) {
+            if ($method != $formAnnotation->getStarter()
+                && $method != $formAnnotation->getAcceptor()
+            ) {
+                continue;
+            }
+
+            $starter = $formAnnotation->getStarter();
+            $starterActionName = $className . '::' . $starter;
+            if (empty($this->tree[$starterActionName])) {
+                $this->tree[$starterActionName] = [];
+            }
+            $this->tree[$starterActionName][] = $formAnnotation;
+        }
+    }
+
+    /**
+     * @param FilterControllerEvent $event
+     * @param $request
+     * @param $starterActionName
+     * @throws \Exception
+     *
+     * @return Response
+     */
+    protected function executeStarter(FilterControllerEvent $event, $request, $starterActionName)
+    {
+        $request->attributes->set('_controller', $starterActionName);
+
+        /** @var ContainerAwareHttpKernel $kernel */
+        $kernel = $event->getKernel();
+        $response = $kernel->handle($request, HttpKernelInterface::SUB_REQUEST);
+        return $response;
+    }
+
+
+    /**
      * @param GetResponseForControllerResultEvent $event
      */
     public function onKernelView(GetResponseForControllerResultEvent $event)
@@ -112,35 +154,29 @@ class FormListener
         $controllerName = $request->get('_controller');
         if (!empty($this->tree[$controllerName])) {
             foreach ($this->tree[$controllerName] as $formAnnotation) {
-                $params = $event->getControllerResult();
-                $this->templateParameters = $params;
-                $entity = $params['entity'];
-                $formName = $formAnnotation->getValue();
-                if (empty($params[$formName])) {
-                    $formCreateMethod = $formAnnotation->getMethod();
-                    $form = call_user_func_array([$this->controller, $formCreateMethod], [$entity]);
-                    $params[$formName] = $form->createView();
-                    if ($this->currentFormAnnotation && $this->currentFormAnnotation->getMethod() == $formCreateMethod) {
-                        $this->currentForm = $form;
-                    }
-                }
-                $event->setControllerResult($params);
+                $this->injectFormIntoTemplateParameters($event, $formAnnotation);
             }
         }
     }
 
     /**
-     * @param $className
-     * @return Form[]
+     * @param GetResponseForControllerResultEvent $event
+     * @param Form $formAnnotation
      */
-    protected function getFormAnnotations($className)
+    protected function injectFormIntoTemplateParameters(GetResponseForControllerResultEvent $event, Form $formAnnotation)
     {
-        $reflectionClass = new \ReflectionClass($className);
-        $allAnnotations = $this->annotationReader->getClassAnnotations($reflectionClass);
-        /** @var Form[] $formAnnotations */
-        $formAnnotations = array_filter($allAnnotations, function ($annotation) {
-            return $annotation instanceof Form;
-        });
-        return $formAnnotations;
+        $params = $event->getControllerResult();
+        $this->templateParameters = $params;
+        $entity = $params['entity'];
+        $formName = $formAnnotation->getValue();
+        if (empty($params[$formName])) {
+            $formCreateMethod = $formAnnotation->getMethod();
+            $form = call_user_func_array([$this->controller, $formCreateMethod], [$entity]);
+            $params[$formName] = $form->createView();
+            if ($this->currentFormAnnotation && $this->currentFormAnnotation->getMethod() == $formCreateMethod) {
+                $this->currentForm = $form;
+            }
+        }
+        $event->setControllerResult($params);
     }
 }
