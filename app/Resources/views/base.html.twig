@@ -7,7 +7,16 @@
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
     </head>
     <body>
-        {% block body %}{% endblock %}
+    {% block flashes %}
+        {% for flashMessage in app.session.flashbag.get('fos_user_success') %}
+            {{ flashMessage|trans({}, 'FOSUserBundle') }}
+        {% endfor %} {% for flashMessage in app.session.flashbag.get('notice') %}
+        {{ flashMessage }}
+    {% endfor %} {% for flashMessage in app.session.flashbag.get('error') %}
+        {{ flashMessage }}
+    {% endfor %}
+    {% endblock %}
+    {% block body %}{% endblock %}
         {% block javascripts %}{% endblock %}
     </body>
 </html>

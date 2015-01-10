@@ -6,11 +6,18 @@ use AppBundle\Entity\Post;
 use AppBundle\Form\PostType;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\Session\Session;
+use AppBundle\Configuration\Form;
 
 /**
  * @Route("/post")
+ * @Form("new_form",method="createCreateForm",starter="newAction",acceptor="createAction",rejector="onFormFailed")
+ * @Form("edit_form",method="createEditForm",starter="editAction",acceptor="updateAction",rejector="onFormFailed")
+ * @Form("delete_form",method="createDeleteForm",starter="editAction",acceptor="deleteAction",rejector="onFormFailed")
  */
 class PostController extends Controller
 {
@@ -19,6 +26,7 @@ class PostController extends Controller
      * Lists all Post entities.
      * @Route("/", name="post")
      * @Method("GET")
+     * @Template()
      */
     public function indexAction()
     {
@@ -26,73 +34,71 @@ class PostController extends Controller
 
         $entities = $em->getRepository('AppBundle:Post')->findAll();
 
-        return $this->render('AppBundle:Post:index.html.twig', array(
+        return [
             'entities' => $entities,
-        ));
+        ];
     }
 
     /**
      * Finds and displays a Post entity.
      * @Route("/{id}", name="post_show", requirements={"id": "\d+"})
      * @Method("GET")
+     * @Template()
      */
     public function showAction($id)
     {
         $em = $this->getDoctrine()->getManager();
-
         $entity = $em->getRepository('AppBundle:Post')->find($id);
-
         if (!$entity) {
             throw $this->createNotFoundException('Unable to find Post entity.');
         }
 
-        $deleteForm = $this->createDeleteForm($id);
+        $deleteForm = $this->createDeleteForm($entity);
 
-        return $this->render('AppBundle:Post:show.html.twig', array(
-            'entity'      => $entity,
+        return [
+            'entity' => $entity,
             'delete_form' => $deleteForm->createView(),
-        ));
+        ];
     }
 
     /**
      * Displays a form to create a new Post entity.
      * @Route("/new", name="post_new")
      * @Method("GET")
+     * @Template()
      */
     public function newAction()
     {
         $entity = new Post();
-        $form   = $this->createCreateForm($entity);
-
-        return $this->render('AppBundle:Post:new.html.twig', array(
+        return [
             'entity' => $entity,
-            'form'   => $form->createView(),
-        ));
+            'knuf' => 'inNew',
+        ];
     }
 
     /**
      * Creates a new Post entity.
      * @Route("/", name="post_create")
      * @Method("POST")
+     * @Template("AppBundle:Post:new.html.twig")
      */
-    public function createAction(Request $request)
+    public function createAction(Post $entity)
     {
-        $entity = new Post();
-        $form = $this->createCreateForm($entity);
-        $form->handleRequest($request);
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($entity);
+        $em->flush();
 
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($entity);
-            $em->flush();
+        $this->getSession()->getFlashBag()->add('notice', 'Udało się dodać!');
 
-            return $this->redirect($this->generateUrl('post_show', array('id' => $entity->getId())));
-        }
+        return $this->redirect($this->generateUrl('post_show', array('id' => $entity->getId())));
+    }
 
-        return $this->render('AppBundle:Post:new.html.twig', array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        ));
+    /**
+     * @param Post $entity
+     */
+    public function onFormFailed(Post $entity)
+    {
+        $this->getSession()->getFlashBag()->add('error', 'Form submission failed for ' . $entity->getTitle() . '!');
     }
 
     /**
@@ -100,15 +106,14 @@ class PostController extends Controller
      *
      * @param Post $entity The entity
      *
-     * @return \Symfony\Component\Form\Form The form
+     * @return FormInterface The form
      */
-    private function createCreateForm(Post $entity)
+    public function createCreateForm(Post $entity)
     {
         $form = $this->createForm(new PostType(), $entity, array(
             'action' => $this->generateUrl('post_create'),
             'method' => 'POST',
         ));
-
         $form->add('submit', 'submit', array('label' => 'Create'));
 
         return $form;
@@ -118,97 +123,69 @@ class PostController extends Controller
      * Displays a form to edit an existing Post entity.
      * @Route("/{id}/edit", name="post_edit")
      * @Method("GET")
+     * @Template()
      */
     public function editAction($id)
     {
         $em = $this->getDoctrine()->getManager();
-
         $entity = $em->getRepository('AppBundle:Post')->find($id);
-
         if (!$entity) {
             throw $this->createNotFoundException('Unable to find Post entity.');
         }
 
-        $editForm = $this->createEditForm($entity);
-        $deleteForm = $this->createDeleteForm($id);
-
-        return $this->render('AppBundle:Post:edit.html.twig', array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        ));
+        return [
+            'entity' => $entity,
+        ];
     }
 
     /**
-    * Creates a form to edit a Post entity.
-    *
-    * @param Post $entity The entity
-    *
-    * @return \Symfony\Component\Form\Form The form
-    */
-    private function createEditForm(Post $entity)
+     * Creates a form to edit a Post entity.
+     *
+     * @param Post $entity The entity
+     *
+     * @return FormInterface The form
+     */
+    public function createEditForm(Post $entity)
     {
         $form = $this->createForm(new PostType(), $entity, array(
             'action' => $this->generateUrl('post_update', array('id' => $entity->getId())),
             'method' => 'PUT',
         ));
-
         $form->add('submit', 'submit', array('label' => 'Update'));
 
         return $form;
     }
+
     /**
      * Edits an existing Post entity.
      * @Route("/{id}", name="post_update")
      * @Method("PUT")
+     * @Template("AppBundle:Post:edit.html.twig")
      */
-    public function updateAction(Request $request, $id)
+    public function updateAction(Post $entity)
     {
         $em = $this->getDoctrine()->getManager();
+        $em->persist($entity);
+        $em->flush();
 
-        $entity = $em->getRepository('AppBundle:Post')->find($id);
+        $this->getSession()->getFlashBag()->add('notice', 'Udało się zmienić!');
 
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Post entity.');
-        }
-
-        $deleteForm = $this->createDeleteForm($id);
-        $editForm = $this->createEditForm($entity);
-        $editForm->handleRequest($request);
-
-        if ($editForm->isValid()) {
-            $em->flush();
-
-            return $this->redirect($this->generateUrl('post_edit', array('id' => $id)));
-        }
-
-        return $this->render('AppBundle:Post:edit.html.twig', array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        ));
+        return $this->redirect($this->generateUrl('post_edit', ['id' => $entity->getId()]));
     }
+
     /**
      * Deletes a Post entity.
      * @Route("/{id}", name="post_delete")
      * @Method("DELETE")
+     * @Template("AppBundle:Post:edit.html.twig")
      */
-    public function deleteAction(Request $request, $id)
+    public function deleteAction(Post $entity)
     {
-        $form = $this->createDeleteForm($id);
-        $form->handleRequest($request);
+        $em = $this->getDoctrine()->getManager();
+        $em->remove($entity);
+        $em->flush();
 
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $entity = $em->getRepository('AppBundle:Post')->find($id);
-
-            if (!$entity) {
-                throw $this->createNotFoundException('Unable to find Post entity.');
-            }
-
-            $em->remove($entity);
-            $em->flush();
-        }
+        $this->getSession()->getFlashBag()->add('notice', 'Udało się usunąć!');
 
         return $this->redirect($this->generateUrl('post'));
     }
@@ -218,15 +195,24 @@ class PostController extends Controller
      *
      * @param mixed $id The entity id
      *
-     * @return \Symfony\Component\Form\Form The form
+     * @return FormInterface The form
      */
-    private function createDeleteForm($id)
+    public function createDeleteForm(Post $entity)
     {
         return $this->createFormBuilder()
-            ->setAction($this->generateUrl('post_delete', array('id' => $id)))
+            ->setAction($this->generateUrl('post_delete', array('id' => $entity->getId())))
             ->setMethod('DELETE')
             ->add('submit', 'submit', array('label' => 'Delete'))
-            ->getForm()
-        ;
+            ->getForm();
+    }
+
+    /**
+     * @return Session
+     */
+    protected function getSession()
+    {
+        /** @var $session Session */
+        $session = $this->get('session');
+        return $session;
     }
 }
