@@ -9,6 +9,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\Session;
 use AppBundle\Configuration\Form;
 
@@ -22,7 +23,6 @@ class PostController extends Controller
 {
 
     /**
-     * Lists all Post entities.
      * @Route("/", name="post")
      * @Method("GET")
      * @Template()
@@ -30,7 +30,6 @@ class PostController extends Controller
     public function indexAction()
     {
         $em = $this->getDoctrine()->getManager();
-
         $entities = $em->getRepository('AppBundle:Post')->findAll();
 
         return [
@@ -39,19 +38,16 @@ class PostController extends Controller
     }
 
     /**
-     * Finds and displays a Post entity.
      * @Route("/{id}", name="post_show", requirements={"id": "\d+"})
      * @Method("GET")
      * @Template()
+     *
+     * @param Post $entity
+     *
+     * @return array
      */
-    public function showAction($id)
+    public function showAction(Post $entity)
     {
-        $em = $this->getDoctrine()->getManager();
-        $entity = $em->getRepository('AppBundle:Post')->find($id);
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Post entity.');
-        }
-
         $deleteForm = $this->createDeleteForm($entity);
 
         return [
@@ -61,24 +57,25 @@ class PostController extends Controller
     }
 
     /**
-     * Displays a form to create a new Post entity.
      * @Route("/new", name="post_new")
      * @Method("GET")
      * @Template()
      */
     public function newAction()
     {
-        $entity = new Post();
         return [
-            'entity' => $entity,
+            'entity' => new Post(),
         ];
     }
 
     /**
-     * Creates a new Post entity.
      * @Route("/", name="post_create")
      * @Method("POST")
      * @Template("AppBundle:Post:new.html.twig")
+     *
+     * @param Post $entity
+     *
+     * @return RedirectResponse
      */
     public function createAction(Post $entity)
     {
@@ -100,8 +97,6 @@ class PostController extends Controller
     }
 
     /**
-     * Creates a form to create a Post entity.
-     *
      * @param Post $entity The entity
      *
      * @return FormInterface The form
@@ -118,27 +113,22 @@ class PostController extends Controller
     }
 
     /**
-     * Displays a form to edit an existing Post entity.
      * @Route("/{id}/edit", name="post_edit")
      * @Method("GET")
      * @Template()
+     *
+     * @param Post $entity
+     *
+     * @return array
      */
-    public function editAction($id)
+    public function editAction(Post $entity)
     {
-        $em = $this->getDoctrine()->getManager();
-        $entity = $em->getRepository('AppBundle:Post')->find($id);
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Post entity.');
-        }
-
         return [
             'entity' => $entity,
         ];
     }
 
     /**
-     * Creates a form to edit a Post entity.
-     *
      * @param Post $entity The entity
      *
      * @return FormInterface The form
@@ -155,10 +145,13 @@ class PostController extends Controller
     }
 
     /**
-     * Edits an existing Post entity.
      * @Route("/{id}", name="post_update")
      * @Method("PUT")
      * @Template("AppBundle:Post:edit.html.twig")
+     *
+     * @param Post $entity
+     *
+     * @return RedirectResponse
      */
     public function updateAction(Post $entity)
     {
@@ -166,16 +159,19 @@ class PostController extends Controller
         $em->persist($entity);
         $em->flush();
 
-        $this->getSession()->getFlashBag()->add('notice', 'Udało się zmienić!');
+        $this->getSession()->getFlashBag()->add('notice', 'Post '.$entity->getTitle().' updated successfully!');
 
         return $this->redirect($this->generateUrl('post_edit', ['id' => $entity->getId()]));
     }
 
     /**
-     * Deletes a Post entity.
      * @Route("/{id}", name="post_delete")
      * @Method("DELETE")
      * @Template("AppBundle:Post:edit.html.twig")
+     *
+     * @param Post $entity
+     *
+     * @return RedirectResponse
      */
     public function deleteAction(Post $entity)
     {
@@ -189,9 +185,7 @@ class PostController extends Controller
     }
 
     /**
-     * Creates a form to delete a Post entity by id.
-     *
-     * @param mixed $id The entity id
+     * @param Post $entity
      *
      * @return FormInterface The form
      */
