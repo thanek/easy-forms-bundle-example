@@ -12,13 +12,14 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\Session;
 use AppBundle\Configuration\Form;
+use AppBundle\Configuration\FormAcceptor;
+use AppBundle\Configuration\FormStarter;
 
 /**
  * @Route("/post")
- * @Form("new_form",method="createCreateForm",starter="newAction",acceptor="createAction",rejector="onFormFailed")
- * @Form("edit_form",method="createEditForm",starter="editAction",acceptor="updateAction",rejector="onFormFailed")
- * @Form("delete_form",method="createDeleteForm",starter="editAction",acceptor="deleteAction")
- * @Form("delete_form",method="createDeleteForm",starter="showAction")
+ * @Form("new_form", method="createCreateForm")
+ * @Form("edit_form", method="createEditForm")
+ * @Form("delete_form", method="createDeleteForm")
  */
 class PostController extends Controller
 {
@@ -41,6 +42,7 @@ class PostController extends Controller
      * @Route("/{id}", name="post_show", requirements={"id": "\d+"})
      * @Method("GET")
      * @Template()
+     * @FormStarter("delete_form")
      *
      * @param Post $entity
      *
@@ -57,6 +59,7 @@ class PostController extends Controller
      * @Route("/new", name="post_new")
      * @Method("GET")
      * @Template()
+     * @FormStarter("new_form")
      */
     public function newAction()
     {
@@ -68,7 +71,8 @@ class PostController extends Controller
     /**
      * @Route("/", name="post_create")
      * @Method("POST")
-     * @Template("AppBundle:Post:new.html.twig")
+     * @Template()
+     * @FormAcceptor("new_form", starter="newAction", rejector="onFormFailed")
      *
      * @param Post $entity
      *
@@ -81,15 +85,14 @@ class PostController extends Controller
         $em->flush();
 
         $this->addFlashMessage('notice', 'Post ' . $entity->getTitle() . ' added successfully!');
-
         return $this->redirect($this->generateUrl('post_show', ['id' => $entity->getId()]));
     }
 
 
     /**
-     * @param Post $entity The entity
+     * @param Post $entity
      *
-     * @return FormInterface The form
+     * @return FormInterface
      */
     public function createCreateForm(Post $entity)
     {
@@ -106,6 +109,8 @@ class PostController extends Controller
      * @Route("/{id}/edit", name="post_edit")
      * @Method("GET")
      * @Template()
+     * @FormStarter("edit_form")
+     * @FormStarter("delete_form")
      *
      * @param Post $entity
      *
@@ -121,7 +126,8 @@ class PostController extends Controller
     /**
      * @Route("/{id}", name="post_update")
      * @Method("PUT")
-     * @Template("AppBundle:Post:edit.html.twig")
+     * @Template()
+     * @FormAcceptor("edit_form", starter="editAction", rejector="onFormFailed")
      *
      * @param Post $entity
      *
@@ -135,13 +141,13 @@ class PostController extends Controller
 
         $this->addFlashMessage('notice', 'Post ' . $entity->getTitle() . ' updated successfully!');
 
-        return $this->redirect($this->generateUrl('post_edit', ['id' => $entity->getId()]));
+        return $this->redirect($this->generateUrl('post_show', ['id' => $entity->getId()]));
     }
 
     /**
-     * @param Post $entity The entity
+     * @param Post $entity
      *
-     * @return FormInterface The form
+     * @return FormInterface
      */
     public function createEditForm(Post $entity)
     {
@@ -157,7 +163,8 @@ class PostController extends Controller
     /**
      * @Route("/{id}", name="post_delete")
      * @Method("DELETE")
-     * @Template("AppBundle:Post:edit.html.twig")
+     * @Template()
+     * @FormAcceptor("delete_form", starter="editAction")
      *
      * @param Post $entity
      *
@@ -177,7 +184,7 @@ class PostController extends Controller
     /**
      * @param Post $entity
      *
-     * @return FormInterface The form
+     * @return FormInterface
      */
     public function createDeleteForm(Post $entity)
     {
@@ -202,14 +209,6 @@ class PostController extends Controller
      */
     protected function addFlashMessage($type, $message)
     {
-        $this->getSession()->getFlashBag()->add($type, $message);
-    }
-
-    /**
-     * @return Session
-     */
-    protected function getSession()
-    {
-        return $this->get('session');
+        $this->get('session')->getFlashBag()->add($type, $message);
     }
 }

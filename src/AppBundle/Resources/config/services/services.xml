@@ -5,9 +5,13 @@
     xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
 	<services>
-        <service id="xis.form_listener" class="AppBundle\Configuration\FormListener">
+        <service id="xis.form.starter_listener" class="AppBundle\Configuration\FormStarterListener">
             <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" />
             <tag name="kernel.event_listener" event="kernel.view" method="onKernelView" />
+            <argument id="service_container" type="service"/>
+        </service>
+        <service id="xis.form.acceptor_listener" class="AppBundle\Configuration\FormAcceptorListener">
+            <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" />
             <argument id="service_container" type="service"/>
         </service>
 	</services>
