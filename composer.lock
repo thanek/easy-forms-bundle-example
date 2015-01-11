@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "796f54b6c7654e81e37b03da09a7cc44",
+    "hash": "d19d22ddac0769a87fdc7fdbe5826748",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -1612,6 +1612,36 @@
                 "templating"
             ],
             "time": "2014-12-25 19:58:19"
+        },
+        {
+            "name": "xis/easy-forms-bundle",
+            "version": "v0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thanek/easy-forms-bundle.git",
+                "reference": "9664d57b7461352305841fcba16caaa95f33713d"
+            },
+            "require": {
+                "php": ">=5.4",
+                "sensio/framework-extra-bundle": "~3.0"
+            },
+            "type": "symfony-bundle",
+            "autoload": {
+                "psr-4": {
+                    "Xis\\EasyFormsBundle\\": ""
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "xis",
+                    "email": "xis@schowek.net"
+                }
+            ],
+            "description": "Easy forms bundle",
+            "time": "2015-01-11 20:37:52"
         }
     ],
     "packages-dev": [

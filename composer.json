@@ -6,6 +6,12 @@
     "autoload": {
         "psr-0": { "": "src/", "SymfonyStandard": "app/" }
     },
+    "repositories": [
+        {
+            "url": "https://github.com/thanek/easy-forms-bundle.git",
+            "type": "git"
+        }
+    ],
     "require": {
         "php": ">=5.3.3",
         "symfony/symfony": "2.6.*",
@@ -17,7 +23,8 @@
         "symfony/monolog-bundle": "~2.4",
         "sensio/distribution-bundle": "~3.0.12",
         "sensio/framework-extra-bundle": "~3.0",
-        "incenteev/composer-parameter-handler": "~2.0"
+        "incenteev/composer-parameter-handler": "~2.0",
+        "xis/easy-forms-bundle": "~0.1"
     },
     "require-dev": {
         "sensio/generator-bundle": "~2.3"
