@@ -85,6 +85,7 @@ class PostController extends Controller
         $em->flush();
 
         $this->addFlashMessage('notice', 'Post ' . $entity->getTitle() . ' added successfully!');
+
         return $this->redirect($this->generateUrl('post_show', ['id' => $entity->getId()]));
     }
 
