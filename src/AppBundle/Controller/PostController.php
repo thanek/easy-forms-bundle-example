@@ -11,9 +11,9 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\Session;
-use AppBundle\Configuration\Form;
-use AppBundle\Configuration\FormAcceptor;
-use AppBundle\Configuration\FormStarter;
+use xis\EasyFormsBundle\Configuration\Form;
+use xis\EasyFormsBundle\Configuration\FormAcceptor;
+use xis\EasyFormsBundle\Configuration\FormStarter;
 
 /**
  * @Route("/post")

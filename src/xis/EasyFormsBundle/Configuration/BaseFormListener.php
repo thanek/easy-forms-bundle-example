@@ -1,5 +1,5 @@
 <?php
-namespace AppBundle\Configuration;
+namespace xis\EasyFormsBundle\Configuration;
 
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\Util\ClassUtils;
