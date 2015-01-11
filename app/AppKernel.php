@@ -17,7 +17,7 @@ class AppKernel extends Kernel
             new Doctrine\Bundle\DoctrineBundle\DoctrineBundle(),
             new Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle(),
 
-            new xis\EasyFormsBundle\xisEasyFormsBundle(),
+            new Xis\EasyFormsBundle\XisEasyFormsBundle(),
             new AppBundle\AppBundle(),
         );
 

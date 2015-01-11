@@ -1,5 +1,5 @@
 <?php
-namespace xis\EasyFormsBundle\Configuration;
+namespace Xis\EasyFormsBundle\Configuration;
 
 use Doctrine\Common\Annotations\Annotation;
 
